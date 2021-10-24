@@ -47,7 +47,7 @@ fields:
 The LocalBallot behavior keeps track of the local player's vote state
 (serialized). In a periodic loop, the LocalBallot checks if the player's local
 state is reflected in the global VoteState. If the VoteState is out of date, the
-LocalBallot behavior chooses a VoteMessanger at random, takes ownership, sets
+LocalBallot behavior chooses a VoteMessenger at random, takes ownership, sets
 `pendingUsername` and `pendingVote` to the local state, and the waits a random
 amount of time.
 

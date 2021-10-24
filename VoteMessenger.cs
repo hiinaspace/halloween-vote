@@ -3,7 +3,7 @@ using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
-
+using VRC.Udon.Common;
 
 /// <summary>
 /// Synced gameobject for VoteState updates, so players don't have to contend on
@@ -14,10 +14,31 @@ using VRC.Udon;
 public class VoteMessenger : UdonSharpBehaviour
 {
     // voter username, to disambiguate 
-    [UdonSynced] public string voterUsername;
+    [UdonSynced] public string voterUsername = "";
     // expected vote value from which to update, to prevent out of order updates from
     // clobbering eachother, i.e. compare-and-set.
-    [UdonSynced] public string oldVote;
+    [UdonSynced] public string oldVote = "";
     // new vote to replace old vote.
-    [UdonSynced] public string newVote;
+    [UdonSynced] public string newVote = "";
+
+    public WorldLog worldLog;
+    private void log(string msg)
+    {
+        worldLog.Log($"[{name}] {msg}");
+    }
+
+    public override void OnPreSerialization()
+    {
+        log("onpreserialization");
+    }
+
+    public override void OnDeserialization()
+    {
+        log("ondeserialize");
+    }
+
+    public override void OnPostSerialization(SerializationResult result)
+    {
+        log($"onpostserialization success={result.success} bytes={result.byteCount}");
+    }
 }
