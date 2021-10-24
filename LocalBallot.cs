@@ -63,20 +63,21 @@ public class LocalBallot : UdonSharpBehaviour
             var localVote = voteState.LookupVote(DisplayName(Networking.LocalPlayer));
             if (localVote != "")
             {
+                // we had a previous vote in this instance
                 // deserialize into hashmap
-                string[] newVotes = localVote.Split(':');
+                string[] newVotes = localVote.Split(',');
                 foreach (string candidateVote in newVotes)
                 {
-                    var candidateAndVote = candidateVote.Split(',');
+                    var candidateAndVote = candidateVote.Split(':');
                     var candidate = candidateAndVote[0];
                     var vote = int.Parse(candidateAndVote[1]);
                     if (set(candidate, vote, candidateUsernames, voteBitsets))
                     {
                         ballotSize++;
                     }
+                    // new row for each vote, including players not currently in the instance
+                    AddNewRow(initializeCheckmarksFromState: true, candidate, vote);
                 }
-                // write localVote onto BallotUi state, inserting new row for each vote 
-                // e.g. if the user rejoins
             }
 
             log($"initialized local vote to '{localVote}'");
@@ -164,46 +165,64 @@ public class LocalBallot : UdonSharpBehaviour
         {
             if (p == Networking.LocalPlayer) continue;
             var candidate = DisplayName(p);
-            string rowName = $"row_{candidate}";
+            AddNewRow(initializeCheckmarksFromState: false, candidate, 0);
 
-            var ballotRowT = ballotUiRoot.Find(rowName);
-            if (ballotRowT == null)
+        }
+    }
+
+    private void AddNewRow(bool initializeCheckmarksFromState, string candidate, int currentVote)
+    {
+        string rowName = $"row_{candidate}";
+
+        var ballotRowT = ballotUiRoot.Find(rowName);
+        if (ballotRowT == null)
+        {
+            var ballotRow = VRCInstantiate(prototypeRow);
+            ballotRow.name = rowName;
+            ballotRow.GetComponentInChildren<UnityEngine.UI.Text>().text = candidate;
+
+            ballotRow.transform.SetParent(ballotUiRoot);
+            ballotRow.transform.SetAsLastSibling();
+            ballotRow.SetActive(true);
+
+            // used only during initialization, if the user rejoined and had previous state.
+            // XXX weird, but the least bad way I could think to share code.
+            if (initializeCheckmarksFromState)
             {
-                var ballotRow = VRCInstantiate(prototypeRow);
-                ballotRow.name = rowName;
-                ballotRow.GetComponentInChildren<UnityEngine.UI.Text>().text = candidate;
-
-                ballotRow.transform.SetParent(ballotUiRoot);
-                ballotRow.transform.SetAsLastSibling();
-                ballotRow.SetActive(true);
-
-                // vrcinstantiate seems to reset the transform to world 0 0
-                var transform = ballotRow.GetComponent<RectTransform>();
-                transform.anchoredPosition = Vector3.zero;
-                transform.localPosition = Vector3.zero;
-                transform.localRotation = Quaternion.identity;
-                transform.localScale = Vector3.one;
-                transform.ForceUpdateRectTransforms();
-
-                // move to sorted order (if it's not already last)
-                for (int j = 0; j < ballotUiRoot.childCount; ++j)
-                {
-                    var t = ballotUiRoot.GetChild(j);
-                    if (rowName.CompareTo(t.name) < 0)
-                    {
-                        ballotRow.transform.SetSiblingIndex(j);
-                        break;
-                    }
-                }
-                log($"new row for {candidate} at {ballotRow.transform.GetSiblingIndex()}");
-            } 
-            else
-            {
-                //log($"found existing row for {candidate}");
-                // reactivate since player is in the map
-                ballotRowT.gameObject.SetActive(true);
+                var toggles = ballotRow.GetComponentsInChildren<UnityEngine.UI.Toggle>();
+                toggles[0].isOn = (currentVote & 1) > 0;
+                toggles[1].isOn = (currentVote & 2) > 0;
+                toggles[2].isOn = (currentVote & 4) > 0;
+                toggles[3].isOn = (currentVote & 8) > 0;
+                toggles[4].isOn = (currentVote & 16) > 0;
+                toggles[5].isOn = (currentVote & 32) > 0;
             }
 
+            // vrcinstantiate seems to reset the transform to world 0 0
+            var transform = ballotRow.GetComponent<RectTransform>();
+            transform.anchoredPosition = Vector3.zero;
+            transform.localPosition = Vector3.zero;
+            transform.localRotation = Quaternion.identity;
+            transform.localScale = Vector3.one;
+            transform.ForceUpdateRectTransforms();
+
+            // move to sorted order (if it's not already last)
+            for (int j = 0; j < ballotUiRoot.childCount; ++j)
+            {
+                var t = ballotUiRoot.GetChild(j);
+                if (rowName.CompareTo(t.name) < 0)
+                {
+                    ballotRow.transform.SetSiblingIndex(j);
+                    break;
+                }
+            }
+            log($"new row for {candidate} at {ballotRow.transform.GetSiblingIndex()}");
+        }
+        else
+        {
+            //log($"found existing row for {candidate}");
+            // reactivate since player is in the map
+            ballotRowT.gameObject.SetActive(true);
         }
     }
 
