@@ -71,6 +71,7 @@ public class VoteState : UdonSharpBehaviour
             if (currentVote == messenger.oldVote)
             {
                 log($"{messenger.name} new vote for {messenger.voterUsername}");
+                voterUsernames[i] = messenger.voterUsername;
                 votes[i] = messenger.newVote;
 
                 // take ownership and clear messenger, lest there be two or more messengers
