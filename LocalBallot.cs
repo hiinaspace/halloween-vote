@@ -170,6 +170,26 @@ public class LocalBallot : UdonSharpBehaviour
         }
     }
 
+    /// <summary>
+    /// Add a vote for the given candidate and category, e.g. from some trigger event.
+    /// </summary>
+    /// <param name="candidate">candidate to vote for</param>
+    /// <param name="voteCategory">vote category (0-5)</param>
+    public void AddVoteForCandidate(VRCPlayerApi candidate, int voteCategory)
+    {
+        // no self votes
+        if (candidate == Networking.LocalPlayer) return;
+
+        var ballotRowT = ballotUiRoot.Find($"row_{DisplayName(candidate)}");
+        if (ballotRowT != null)
+        {
+            var toggles = ballotRowT.GetComponentsInChildren<UnityEngine.UI.Toggle>();
+            toggles[voteCategory].isOn = true;
+        }
+        // else just wait for update loop to add row for user;
+        // this shouldn't happen practically
+    }
+
     private void AddNewRow(bool initializeCheckmarksFromState, string candidate, int currentVote)
     {
         string rowName = $"row_{candidate}";
