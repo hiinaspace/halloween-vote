@@ -27,18 +27,11 @@ public class VoteMessenger : UdonSharpBehaviour
         worldLog.Log($"[{name}] {msg}");
     }
 
-    public override void OnPreSerialization()
-    {
-        log("onpreserialization");
-    }
-
-    public override void OnDeserialization()
-    {
-        log("ondeserialize");
-    }
-
     public override void OnPostSerialization(SerializationResult result)
     {
-        log($"onpostserialization success={result.success} bytes={result.byteCount}");
+        if (!result.success)
+        {
+            log($"onpostserialization failed bytes={result.byteCount}");
+        }
     }
 }

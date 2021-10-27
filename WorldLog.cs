@@ -13,6 +13,8 @@ public class WorldLog : UdonSharpBehaviour
     public void Log(string message)
     {
         Debug.Log($"[HWS] {message}");
+        // skip if nobody is looking
+        if (!text.gameObject.activeInHierarchy) return;
         if (text.text.Split('\n').Length > 60)
         {
             // trim
