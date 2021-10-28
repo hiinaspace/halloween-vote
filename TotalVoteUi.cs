@@ -66,10 +66,6 @@ public class TotalVoteUi : UdonSharpBehaviour
         var tallyLines = new string[candidateCount];
         var n = 0;
 
-        var top = new int[6];
-        var topTieCount = new int[6];
-        var topCandidate = new string[6];
-
         for (int i = 0; i < MAXSIZE; i++)
         {
             if (candidateUsernames[i] != null)
@@ -77,24 +73,6 @@ public class TotalVoteUi : UdonSharpBehaviour
                 var t = tally[i];
                 // XXX no format alignment in usharp
                 tallyLines[n++] = $"{candidateUsernames[i].PadLeft(20)}: {t[0]} {t[1]} {t[2]} {t[3]} {t[4]} {t[5]}";
-
-                for (int j = 0; j < 6; j++)
-                {
-                    if (t[j] > top[j])
-                    {
-                        topUsernames[j].text = candidateUsernames[i];
-                        topTieCount[j] = 1;
-                        top[j] = t[j];
-                    } else if (t[j] == top[j])
-                    {
-                        // uniformly sample between tied users
-                        topTieCount[j]++;
-                        if (UnityEngine.Random.Range(0, topTieCount[j]) == 0)
-                        {
-                            topUsernames[j].text = candidateUsernames[i];
-                        }
-                    }
-                }
             }
         }
 
@@ -112,6 +90,54 @@ public class TotalVoteUi : UdonSharpBehaviour
         }
 
         text.text = $"Vote Tally:\n{string.Join("\n", tallyLines)}";
+
+        // populate top lists
+        for (int category = 0; category < 6; category++)
+        {
+            var candidates = new string[MAXSIZE];
+            var score = new int[MAXSIZE];
+            int m = 0;
+            for (int i = 0; i < MAXSIZE; i++)
+            {
+                if (candidateUsernames[i] != null)
+                {
+                    var t = tally[i];
+                    // XXX no format alignment in usharp
+                    candidates[m] = candidateUsernames[i];
+                    score[m] = t[category];
+                    m++;
+                }
+            }
+            // sort descending order
+            for (int i = 1; i < m; ++i)
+            {
+                var s = score[i];
+                var user = candidates[i];
+                var j = i - 1;
+                while (j >= 0 && score[j].CompareTo(s) < 0)
+                {
+                    score[j + 1] = score[j];
+                    candidates[j + 1] = candidates[j];
+                    j--;
+                }
+                score[j + 1] = s;
+                candidates[j + 1] = user;
+            }
+            var textLines = new string[m];
+            for (int i = 0; i < m; i++)
+            {
+                if (score[i] > 0)
+                {
+                    textLines[i] = $"{i+1}. {candidates[i]} ({score[i]})\n";
+                }
+                else
+                {
+                    textLines[i] = "";
+                }
+            }
+
+            topUsernames[category].text = string.Join("", textLines);
+        }
     }
 
     private
